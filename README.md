@@ -989,17 +989,6 @@ Bukti_Pengujian/
 
 Sertakan bukti konfigurasi dan bukti pengujian, bukan hanya screenshot script. Untuk Soal 8, lampirkan paket DORA. Untuk Soal 11, lampirkan perbandingan serial Master–Slave. Untuk Soal 19, tunjukkan `MISS`, `HIT`, dan respons `429`. Untuk Soal 20, lampirkan keluaran ApacheBench dan analisis log.
 
-## Backup dan penutupan GNS3
-
-Sebelum berhenti, simpan proyek dengan `Ctrl+S`, ekspor proyek GNS3 jika tersedia, dan salin script serta file konfigurasi penting ke luar container. Arsip yang tersimpan di `/root` tetap berada di dalam container dan bukan pengganti backup di laptop.
-
-Setelah backup:
-
-1. Simpan proyek GNS3.
-2. Stop seluruh node menggunakan kontrol GNS3.
-3. Simpan proyek sekali lagi.
-4. Tutup GNS3 secara normal.
-
 ## Kesimpulan
 
 Praktikum Modul 3 mencakup pemulihan jaringan, DHCP server dan relay, pengaturan pool dan lease, validasi serta analisis paket DHCP, DNS Master-Slave, database replication, frontend dan API worker, load balancing, reverse proxy, penerusan IP klien, failover, cache/rate limiting, serta benchmarking. Setiap nomor harus dibuktikan melalui validasi konfigurasi dan pengujian aktual. Hasil akhir, screenshot, dan angka pengujian perlu disesuaikan dengan kondisi nyata proyek GNS3 yang digunakan.
