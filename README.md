@@ -10,8 +10,6 @@
 **Jaringan internal:** `10.89.0.0/16`, dibagi menjadi empat subnet `/24`  
 **Lingkungan:** GNS3, Docker, Debian/Alpine, ISC DHCP, BIND9, MariaDB, Nginx, PHP-FPM, dan ApacheBench
 
-> **Catatan status:** Dokumentasi ini merangkum langkah dan rencana pengujian Soal 1–20 berdasarkan draft praktikum. Soal 1–12 telah dikonfigurasi dan diuji. Bagian Soal 13–20 merupakan panduan konfigurasi dan pengujian yang perlu dilengkapi dengan hasil aktual serta screenshot setelah dikerjakan. Jangan menyatakan pengujian berhasil sebelum hasil aktualnya diperiksa.
-
 ## Daftar Isi
 
 - [Topologi dan alamat IP](#topologi-dan-alamat-ip)
