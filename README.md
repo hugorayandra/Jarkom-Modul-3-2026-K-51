@@ -214,6 +214,14 @@ ip route
 
 Hasil pengujian yang tercatat: Itadori `10.89.2.10`, Fushiguro `10.89.2.11`, Zenin `10.89.2.70`, dan Okkotsu `10.89.2.71`.
 
+### Bukti 4.1 — Class dan Rentang Pool
+![Konfigurasi pool DHCP](Bukti_Pengujian/Soal_04/01-dhcp-class-pool.png)
+
+### Bukti 4.2 — Hasil Lease Klien
+![Hasil lease Pool 1 dan Pool 2](Bukti_Pengujian/Soal_04/02-client-lease.png)
+
+---
+
 ## Soal 5 — Short lease dan long lease
 
 ### Tujuan
@@ -245,6 +253,17 @@ grep -nE 'class |subclass |range |default-lease-time|max-lease-time|domain-searc
 ```
 
 Uji klien dengan meminta lease baru. Untuk membuktikan durasi lease, periksa DHCP Offer/ACK pada packet capture. Hasil yang pernah terlihat pada Kusakabe adalah lease `1800` detik, gateway `10.89.3.1`, DNS `10.89.1.2` dan `10.89.1.3`, serta domain search `K-51.com`.
+
+### Bukti 5.1 — Konfigurasi Lease
+![Konfigurasi short lease dan long lease](Bukti_Pengujian/Soal_05/01-lease-config.png)
+
+### Bukti 5.2 — Hasil Lease Client
+![Hasil lease klien](Bukti_Pengujian/Soal_05/02-client-lease.png)
+
+### Bukti 5.3 — Lease Time pada Paket DHCP
+![Lease time dari paket DHCP](Bukti_Pengujian/Soal_05/03-lease-packet.png)
+
+---
 
 ## Soal 6 — DHCP fixed address Kugisaki
 
@@ -283,6 +302,14 @@ ip route
 ```
 
 Hasil pengujian: Kugisaki memperoleh `10.89.3.99` melalui DHCP, bukan karena alamat statis yang dikonfigurasi manual.
+
+### Bukti 6.1 — Konfigurasi Reservasi
+![Konfigurasi fixed address Kugisaki](Bukti_Pengujian/Soal_06/01-fixed-address-config.png)
+
+### Bukti 6.2 — IP Kugisaki
+![Alamat IP Kugisaki](Bukti_Pengujian/Soal_06/02-kugisaki-ip.png)
+
+---
 
 ## Soal 7 — Validasi konfigurasi seluruh klien
 
@@ -327,6 +354,17 @@ Hasil alamat yang tercatat pada pengujian:
 
 Periksa IP aktual pada terminal Ino dan Miwa, lalu bukti masa lease Miwa selama `43200` detik sebelum menyatakan seluruh aspek validasi selesai.
 
+### Bukti 7.1 — IP dan Routing Klien
+![IP dan routing klien](Bukti_Pengujian/Soal_07/01-client-network.png)
+
+### Bukti 7.2 — DHCP Lease Tengen
+![DHCP lease Tengen](Bukti_Pengujian/Soal_07/02-dhcp-leases.png)
+
+### Bukti 7.3 — DNS dan Domain Search
+![DNS dan domain search](Bukti_Pengujian/Soal_07/03-dns-options.png)
+
+---
+
 ## Soal 8 — Packet capture DHCP
 
 ### Tujuan
@@ -348,6 +386,14 @@ tcpdump -ni eth0 -vvv 'udp port 67 or udp port 68'
 ```
 
 Dalam pengujian Itadori, server yang terlihat adalah `10.89.4.10`, alamat yang ditawarkan `10.89.2.10`, dan lease time `600` detik. `giaddr` harus sesuai dengan interface Jichi yang menerima request klien; untuk Network 2 nilainya diharapkan `10.89.2.1`.
+
+### Bukti 8.1 — Urutan Paket DORA
+![Paket DHCP DORA](Bukti_Pengujian/Soal_08/01-dhcp-dora.png)
+
+### Bukti 8.2 — Detail Paket DHCP
+![Detail paket DHCP](Bukti_Pengujian/Soal_08/02-dhcp-packet-details.png)
+
+---
 
 ## Soal 9 — Simulasi gangguan DHCP Relay
 
@@ -385,6 +431,17 @@ Membuktikan bahwa klien gagal mendapatkan lease baru ketika Relay dihentikan dan
 
 Pada pengujian yang dilakukan, Itadori berhasil memperoleh `10.89.2.10` sebelum gangguan, gagal memperoleh lease ketika relay dihentikan, lalu kembali berhasil setelah relay berjalan lagi.
 
+### Bukti 9.1 — DHCP Relay Dihentikan
+![Relay berhenti](Bukti_Pengujian/Soal_09/01-relay-stopped.png)
+
+### Bukti 9.2 — Klien Gagal Mendapat Lease
+![Kegagalan DHCP saat relay mati](Bukti_Pengujian/Soal_09/02-dhcp-failure.png)
+
+### Bukti 9.3 — DHCP Pulih
+![DHCP berhasil setelah relay dipulihkan](Bukti_Pengujian/Soal_09/03-dhcp-recovered.png)
+
+---
+
 ## Soal 10 — Persistensi setelah restart
 
 ### Tujuan
@@ -418,6 +475,17 @@ Lanjutkan dengan menguji klien Itadori, Miwa, dan Kugisaki. Ketiganya harus memp
 ### Hasil yang telah terlihat
 
 Jichi tetap memiliki IP interface, routing, `ip_forward=1`, dan aturan NAT setelah restart. Proses relay berjalan kembali, Itadori memperoleh `10.89.2.10` dari Tengen dengan lease 600 detik, Miwa mendapatkan alamat dari pool long lease, dan Kugisaki mendapatkan `10.89.3.99`.
+
+### Bukti 10.1 — Kondisi Jichi Setelah Restart
+![Jichi setelah restart](Bukti_Pengujian/Soal_10/01-jichi-restart.png)
+
+### Bukti 10.2 — DHCP Relay Aktif
+![DHCP Relay setelah restart](Bukti_Pengujian/Soal_10/02-relay-status.png)
+
+### Bukti 10.3 — Hasil Pengujian Klien
+![Klien memperoleh lease setelah restart](Bukti_Pengujian/Soal_10/03-client-lease.png)
+
+---
 
 ## Soal 11 — DNS Master dan Slave
 
@@ -482,6 +550,23 @@ dig @10.89.1.3 jujutsu.K-51.com NS +short
 ```
 
 Dari klien, lakukan query SOA ke kedua server. Naikkan serial pada file zona Utahime, validasi dengan `named-checkzone`, kemudian jalankan `service named reload`. Query SOA Shoko harus menunjukkan serial baru tanpa restart manual pada Shoko. Layanan menggunakan `named` pada lingkungan Debian yang digunakan.
+
+### Bukti 11.1 — Validasi Zona Master
+![Validasi DNS Master](Bukti_Pengujian/Soal_11/01-master-zone-validation.png)
+
+### Bukti 11.2 — Query SOA dan NS Master
+![SOA dan NS Utahime](Bukti_Pengujian/Soal_11/02-master-soa-ns.png)
+
+### Bukti 11.3 — Zona pada Slave
+![Zona hasil transfer Shoko](Bukti_Pengujian/Soal_11/03-slave-zone.png)
+
+### Bukti 11.4 — Sinkronisasi Serial
+![Serial zona Master dan Slave](Bukti_Pengujian/Soal_11/04-serial-sync.png)
+
+### Bukti 11.5 — Query dari Klien
+![Query DNS dari klien](Bukti_Pengujian/Soal_11/05-client-dig.png)
+
+---
 
 ## Soal 12 — A, CNAME, PTR, dan DNS Forwarder
 
@@ -548,6 +633,23 @@ ping -c 3 google.com
 ```
 
 Hasil yang sudah terlihat pada pengerjaan: A record mengembalikan `10.89.1.4`; CNAME dan PTR mengembalikan `jujutsu.K-51.com.`; kedua DNS menjawab query `google.com`; dan klien menerima balasan ICMP dari `google.com` pada pengujian.
+
+### Bukti 12.1 — A Record Domain Utama
+![A record domain utama](Bukti_Pengujian/Soal_12/01-a-record.png)
+
+### Bukti 12.2 — CNAME www
+![CNAME www](Bukti_Pengujian/Soal_12/02-cname.png)
+
+### Bukti 12.3 — Reverse DNS PTR
+![Reverse DNS PTR](Bukti_Pengujian/Soal_12/03-ptr.png)
+
+### Bukti 12.4 — DNS Forwarder
+![Query domain eksternal](Bukti_Pengujian/Soal_12/04-forwarder.png)
+
+### Bukti 12.5 — Ping Domain Eksternal
+![Ping google.com dari klien](Bukti_Pengujian/Soal_12/05-ping-external.png)
+
+---
 
 ## Soal 13 — MariaDB Master-Slave
 
@@ -620,6 +722,17 @@ mysql -u root -e "SHOW DATABASES;"
 
 Pastikan `Slave_IO_Running` dan `Slave_SQL_Running` bernilai `Yes`, tanpa error replikasi. Tambahkan satu baris baru ke `request_logs` pada Master dan periksa bahwa baris yang sama muncul di Slave. Verifikasi juga akses remote dari node Network 4.
 
+### Bukti 13.1 — Konfigurasi Master
+![MariaDB Master](Bukti_Pengujian/Soal_13/01-master-config.png)
+
+### Bukti 13.2 — Status Slave
+![MariaDB Slave status](Bukti_Pengujian/Soal_13/02-slave-status.png)
+
+### Bukti 13.3 — Data Tereplikasi
+![Data pada Master dan Slave](Bukti_Pengujian/Soal_13/03-replication-data.png)
+
+---
+
 ## Soal 14 — Frontend dan API worker
 
 ### Tujuan
@@ -666,6 +779,20 @@ mysql -u root -e 'SELECT * FROM `db_shibuya_K-51`.request_logs ORDER BY id DESC 
 
 Pastikan izin akses diterapkan sesuai sumber trafik: frontend hanya lewat Gojo, API hanya lewat Geto.
 
+### Bukti 14.1 — Frontend Worker
+![Frontend Maki dan Panda](Bukti_Pengujian/Soal_14/01-frontend.png)
+
+### Bukti 14.2 — Respons API
+![API worker](Bukti_Pengujian/Soal_14/02-api-response.png)
+
+### Bukti 14.3 — Pembatasan Akses
+![Pembatasan akses worker](Bukti_Pengujian/Soal_14/03-access-control.png)
+
+### Bukti 14.4 — Request Log Database
+![Request log pada database](Bukti_Pengujian/Soal_14/04-request-logs.png)
+
+---
+
 ## Soal 15 — Internal Load Balancer Geto
 
 ### Tujuan
@@ -709,6 +836,14 @@ mysql -u root -e 'SELECT worker, COUNT(*) FROM `db_shibuya_K-51`.request_logs GR
 ```
 
 Karena pembagian request bergantung pada kondisi runtime dan jumlah sampel, gunakan jumlah request yang cukup dan jelaskan rasio yang benar-benar teramati.
+
+### Bukti 15.1 — Konfigurasi Upstream
+![Konfigurasi load balancer](Bukti_Pengujian/Soal_15/01-upstream-config.png)
+
+### Bukti 15.2 — Distribusi Request
+![Distribusi request worker API](Bukti_Pengujian/Soal_15/02-load-distribution.png)
+
+---
 
 ## Soal 16 — Public reverse proxy Gojo
 
@@ -767,6 +902,17 @@ done | sort | uniq -c
 
 Uji akses langsung ke worker frontend/API dari klien dan pastikan ditolak sesuai kebijakan akses.
 
+### Bukti 16.1 — Konfigurasi Reverse Proxy
+![Konfigurasi reverse proxy Gojo](Bukti_Pengujian/Soal_16/01-proxy-config.png)
+
+### Bukti 16.2 — Respons Frontend
+![Respons frontend melalui Gojo](Bukti_Pengujian/Soal_16/02-frontend-response.png)
+
+### Bukti 16.3 — Respons API
+![Respons API melalui Geto](Bukti_Pengujian/Soal_16/03-api-response.png)
+
+---
+
 ## Soal 17 — Penerusan IP klien
 
 ### Tujuan
@@ -806,6 +952,14 @@ curl -s -H 'X-Real-IP: 1.2.3.4' http://10.89.4.11/api
 
 Evaluasi output API dan data yang tersimpan. Bukti yang dicari adalah `client_ip` klien yang benar untuk request melalui Gojo, bukan IP Gojo/Geto maupun nilai header palsu dari sumber tidak tepercaya.
 
+### Bukti 17.1 — Header pada Proxy
+![Header IP klien](Bukti_Pengujian/Soal_17/01-client-ip-headers.png)
+
+### Bukti 17.2 — Data client_ip
+![Kolom client_ip pada database](Bukti_Pengujian/Soal_17/02-client-ip-database.png)
+
+---
+
 ## Soal 18 — API fallback ke Kirara
 
 ### Tujuan
@@ -844,6 +998,17 @@ curl -s http://10.89.4.16/api
 ```
 
 Kemudian uji failover secara terkendali di lab: hentikan layanan Nginx atau PHP-FPM/API pada Nanami dan Todo, lalu kirim request melalui domain publik dan periksa bahwa respons berasal dari Kirara serta tidak menghasilkan `502 Bad Gateway`. Setelah pengujian, pulihkan layanan Nanami dan Todo. Periksa catatan database untuk melihat worker yang melayani request.
+
+### Bukti 18.1 — Konfigurasi Backup Upstream
+![Konfigurasi API fallback](Bukti_Pengujian/Soal_18/01-fallback-config.png)
+
+### Bukti 18.2 — Kondisi Worker Utama Berhenti
+![Worker API utama berhenti](Bukti_Pengujian/Soal_18/02-primary-failure.png)
+
+### Bukti 18.3 — Respons dari Kirara
+![API fallback Kirara](Bukti_Pengujian/Soal_18/03-kirara-response.png)
+
+---
 
 ## Soal 19 — Proxy cache dan rate limiting
 
@@ -915,6 +1080,20 @@ grep 'limiting requests' /var/log/nginx/gojo_error.log | tail -n 5
 
 Respons `429` menjadi bukti bahwa rate limiting menolak request yang melampaui kebijakan.
 
+### Bukti 19.1 — Cache MISS
+![Cache MISS](Bukti_Pengujian/Soal_19/01-cache-miss.png)
+
+### Bukti 19.2 — Cache HIT
+![Cache HIT](Bukti_Pengujian/Soal_19/02-cache-hit.png)
+
+### Bukti 19.3 — Rate Limiting
+![Rate limiting API](Bukti_Pengujian/Soal_19/03-rate-limit.png)
+
+### Bukti 19.4 — Log Rate Limit
+![Log rate limit Nginx](Bukti_Pengujian/Soal_19/04-rate-limit-log.png)
+
+---
+
 ## Soal 20 — Benchmark dengan ApacheBench
 
 ### Tujuan
@@ -957,35 +1136,16 @@ Perbandingan API tanpa rate limit:
 
 Laporan benchmark harus mencatat `Complete requests`, `Failed requests`, `Requests per second`, `Time per request`, distribusi latensi, status HTTP, status upstream, cache, dan log rate limit. Gunakan angka yang benar-benar muncul di hasil ApacheBench; jangan mengisi angka perkiraan.
 
-## Daftar bukti dokumentasi
+### Bukti 20.1 — Benchmark Frontend
+![Hasil ApacheBench frontend](Bukti_Pengujian/Soal_20/01-ab-frontend.png)
 
-Disarankan menyimpan screenshot terminal atau hasil command dengan folder per nomor:
+### Bukti 20.2 — Benchmark API
+![Hasil ApacheBench API](Bukti_Pengujian/Soal_20/02-ab-api.png)
 
-```text
-Bukti_Pengujian/
-├── Soal_01_Routing_NAT/
-├── Soal_02_DHCP_Server/
-├── Soal_03_DHCP_Relay/
-├── Soal_04_DHCP_Pool_MAC/
-├── Soal_05_Lease_Time/
-├── Soal_06_Fixed_Address/
-├── Soal_07_Validasi_Clients/
-├── Soal_08_DHCP_Capture/
-├── Soal_09_Relay_Failure/
-├── Soal_10_Restart_Persistence/
-├── Soal_11_DNS_Master_Slave/
-├── Soal_12_DNS_A_CNAME_PTR_Forwarder/
-├── Soal_13_MariaDB_Replication/
-├── Soal_14_Frontend_API/
-├── Soal_15_Load_Balancer/
-├── Soal_16_Reverse_Proxy/
-├── Soal_17_Client_IP_Headers/
-├── Soal_18_API_Failover/
-├── Soal_19_Cache_Rate_Limit/
-└── Soal_20_ApacheBench/
-```
+### Bukti 20.3 — Analisis Log
+![Analisis log Gojo](Bukti_Pengujian/Soal_20/03-access-log-analysis.png)
 
-Sertakan bukti konfigurasi dan bukti pengujian, bukan hanya screenshot script. Untuk Soal 8, lampirkan paket DORA. Untuk Soal 11, lampirkan perbandingan serial Master–Slave. Untuk Soal 19, tunjukkan `MISS`, `HIT`, dan respons `429`. Untuk Soal 20, lampirkan keluaran ApacheBench dan analisis log.
+---
 
 ## Kesimpulan
 
