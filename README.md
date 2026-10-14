@@ -6,3 +6,1000 @@
 |---|---|
 | Muhammad Hugo Rayandra E | 5027251076 |
 | Arrumanta Ekna Luhkinasih | 5027251044 |
+
+## Pemulihan Jaringan dan Layanan Jujutsu High
+
+**Jaringan internal:** `10.89.0.0/16`, dibagi menjadi empat subnet `/24`  
+**Lingkungan:** GNS3, Docker, Debian/Alpine, ISC DHCP, BIND9, MariaDB, Nginx, PHP-FPM, dan ApacheBench
+
+> **Catatan status:** Dokumentasi ini merangkum langkah dan rencana pengujian Soal 1–20 berdasarkan draft praktikum. Soal 1–12 telah dikonfigurasi dan diuji. Bagian Soal 13–20 merupakan panduan konfigurasi dan pengujian yang perlu dilengkapi dengan hasil aktual serta screenshot setelah dikerjakan. Jangan menyatakan pengujian berhasil sebelum hasil aktualnya diperiksa.
+
+## Daftar Isi
+
+- [Topologi dan alamat IP](#topologi-dan-alamat-ip)
+- [Persiapan umum](#persiapan-umum)
+- [Soal 1 — Routing, IP, forwarding, dan NAT](#soal-1--routing-ip-forwarding-dan-nat)
+- [Soal 2 — DHCP Server Tengen](#soal-2--dhcp-server-tengen)
+- [Soal 3 — DHCP Relay Jichi](#soal-3--dhcp-relay-jichi)
+- [Soal 4 — DHCP pool berdasarkan MAC](#soal-4--dhcp-pool-berdasarkan-mac)
+- [Soal 5 — Short lease dan long lease](#soal-5--short-lease-dan-long-lease)
+- [Soal 6 — DHCP fixed address Kugisaki](#soal-6--dhcp-fixed-address-kugisaki)
+- [Soal 7 — Validasi konfigurasi seluruh klien](#soal-7--validasi-konfigurasi-seluruh-klien)
+- [Soal 8 — Packet capture DHCP](#soal-8--packet-capture-dhcp)
+- [Soal 9 — Simulasi gangguan DHCP Relay](#soal-9--simulasi-gangguan-dhcp-relay)
+- [Soal 10 — Persistensi setelah restart](#soal-10--persistensi-setelah-restart)
+- [Soal 11 — DNS Master dan Slave](#soal-11--dns-master-dan-slave)
+- [Soal 12 — A, CNAME, PTR, dan DNS Forwarder](#soal-12--a-cname-ptr-dan-dns-forwarder)
+- [Soal 13 — MariaDB Master-Slave](#soal-13--mariadb-master-slave)
+- [Soal 14 — Frontend dan API worker](#soal-14--frontend-dan-api-worker)
+- [Soal 15 — Internal Load Balancer Geto](#soal-15--internal-load-balancer-geto)
+- [Soal 16 — Public reverse proxy Gojo](#soal-16--public-reverse-proxy-gojo)
+- [Soal 17 — Penerusan IP klien](#soal-17--penerusan-ip-klien)
+- [Soal 18 — API fallback ke Kirara](#soal-18--api-fallback-ke-kirara)
+- [Soal 19 — Proxy cache dan rate limiting](#soal-19--proxy-cache-dan-rate-limiting)
+- [Soal 20 — Benchmark dengan ApacheBench](#soal-20--benchmark-dengan-apachebench)
+- [Daftar bukti dokumentasi](#daftar-bukti-dokumentasi)
+- [Backup dan penutupan GNS3](#backup-dan-penutupan-gns3)
+
+## Topologi dan alamat IP
+
+### Gateway dan subnet
+
+| Network | Subnet | Gateway Jichi | Kegunaan |
+|---|---|---|---|
+| Network 1 | `10.89.1.0/24` | `10.89.1.1` (`eth1`) | DMZ: DNS dan public reverse proxy |
+| Network 2 | `10.89.2.0/24` | `10.89.2.1` (`eth2`) | Klien Divisi A |
+| Network 3 | `10.89.3.0/24` | `10.89.3.1` (`eth3`) | Klien Divisi B |
+| Network 4 | `10.89.4.0/24` | `10.89.4.1` (`eth4`) | Data Center |
+| WAN | Jaringan NAT GNS3 | NAT gateway biasanya `192.168.122.1` | Koneksi eksternal |
+
+### Pemetaan node
+
+| Node | Peran | IP yang digunakan dalam konfigurasi/draft |
+|---|---|---|
+| `jichi` | Router utama dan DHCP Relay | `eth0` WAN dari NAT; `eth1`–`eth4` masing-masing `10.89.1.1`–`10.89.4.1` |
+| `tengen` | DHCP Server | `10.89.4.10` |
+| `utahime` | DNS Master | `10.89.1.2` |
+| `shoko` | DNS Slave | `10.89.1.3` |
+| `gojo` | Public reverse proxy | `10.89.1.4` |
+| `geto` | Internal API load balancer | `10.89.4.11` |
+| `maki` | Frontend worker | `10.89.4.12` |
+| `panda` | Frontend worker | `10.89.4.13` |
+| `nanami` | API worker utama | `10.89.4.14` |
+| `todo` | API worker utama | `10.89.4.15` |
+| `kirara` | API worker cadangan | `10.89.4.16` |
+| `yaga` | MariaDB Master | `10.89.4.22` |
+| `inumaki` | MariaDB Slave | Periksa IP aktual pada topologi/configurasi GNS3; IP tidak dipastikan dalam draft yang tersedia |
+| `itadori`, `fushiguro` | Klien DHCP Pool 1 | Network 2 |
+| `zenin`, `okkotsu` | Klien DHCP Pool 2 | Network 2 |
+| `ino`, `kusakabe` | Klien short lease | Network 3 |
+| `miwa` | Klien long lease | Network 3 |
+| `kugisaki` | Klien fixed address | Network 3 |
+
+**Catatan:** Pastikan tidak ada dua node memakai IP yang sama. Pada Network 1, Utahime adalah `.1.2`, Shoko `.1.3`, dan Gojo `.1.4`. Domain dan nama database menggunakan `K-51` sesuai kelompok; jika prefix resmi berbeda, sesuaikan sebelum menjalankan script.
+
+## Persiapan umum
+
+- Gunakan image Docker yang ditentukan praktikum: `ardhptr21/debinet:latest` untuk server/infrastruktur dan `ardhptr21/alpinet:latest` untuk klien.
+- Simpan script konfigurasi di direktori `/root` pada node terkait.
+- Untuk persiapan awal instalasi paket, DNS sementara yang digunakan dalam draft adalah `192.168.122.1`.
+- Pastikan node Jichi aktif dan jalur antar-subnet tersedia sebelum menguji layanan yang berada di jaringan berbeda.
+- Periksa IP dan route menggunakan `ip -br -4 addr` dan `ip route`.
+- Jangan menjalankan ulang script awal seperti `no2.sh` setelah konfigurasi DHCP nomor 4–10 selesai, karena script awal dapat menimpa konfigurasi pool/class yang lebih lengkap.
+- Di lingkungan ini, layanan BIND9 dipanggil sebagai `named` (`service named`), karena `/etc/init.d/named` tersedia sementara `/etc/init.d/bind9` tidak tersedia.
+
+## Soal 1 — Routing, IP, forwarding, dan NAT
+
+### Tujuan
+
+Memulihkan konektivitas empat subnet melalui router Jichi, mengaktifkan IPv4 forwarding dan source NAT, serta menetapkan IP statis host infrastruktur.
+
+### Konfigurasi utama
+
+| Interface Jichi | Konfigurasi |
+|---|---|
+| `eth0` | WAN dari NAT GNS3 |
+| `eth1` | `10.89.1.1/24` |
+| `eth2` | `10.89.2.1/24` |
+| `eth3` | `10.89.3.1/24` |
+| `eth4` | `10.89.4.1/24` |
+
+Script fondasi dapat disimpan sebagai `/root/setup_jichi.sh`. Rangkaian tugasnya adalah menaikkan interface, meminta alamat WAN melalui DHCP, mengaktifkan `net.ipv4.ip_forward=1`, dan menambahkan NAT `MASQUERADE` melalui `eth0`.
+
+### Verifikasi
+
+```bash
+ip -br addr
+ip route
+cat /proc/sys/net/ipv4/ip_forward
+iptables -t nat -L POSTROUTING -n -v
+```
+
+Kriteria: gateway untuk semua subnet muncul, default route mengarah ke gateway NAT, forwarding bernilai `1`, dan aturan `MASQUERADE` pada jalur WAN tersedia. Uji konektivitas host ke gateway masing-masing dan uji akses eksternal dari host yang relevan.
+
+## Soal 2 — DHCP Server Tengen
+
+### Tujuan
+
+Memasang `isc-dhcp-server` pada Tengen dengan IP `10.89.4.10`, mendeklarasikan Network 4 tanpa pool dinamis, dan menyediakan scope awal untuk Network 2 serta Network 3.
+
+### Konfigurasi awal
+
+Simpan script sebagai `/root/no2.sh` di Tengen. Script awal memasang `isc-dhcp-server`, memilih `eth0` sebagai interface layanan, lalu membuat deklarasi subnet:
+
+- Network 4: `10.89.4.0/24`, tanpa pool dinamis.
+- Network 2: scope awal `10.89.2.100–10.89.2.200`, gateway `10.89.2.1`.
+- Network 3: scope awal `10.89.3.100–10.89.3.200`, gateway `10.89.3.1`.
+
+Scope awal pada Soal 2 kemudian diperinci oleh Soal 4–6. Setelah konfigurasi pool lanjutan dibuat, jangan jalankan ulang `no2.sh` karena dapat menimpa file `/etc/dhcp/dhcpd.conf`.
+
+### Verifikasi
+
+```bash
+dhcpd -t -cf /etc/dhcp/dhcpd.conf
+service isc-dhcp-server status
+ip -br -4 addr
+ip route
+```
+
+Kriteria: konfigurasi valid, layanan aktif, dan tidak ada error `No subnet declaration`.
+
+## Soal 3 — DHCP Relay Jichi
+
+### Tujuan
+
+Meneruskan permintaan DHCP dari Network 2 dan Network 3 ke DHCP Server Tengen (`10.89.4.10`).
+
+### Konfigurasi
+
+Simpan script di `/root/no3.sh` pada Jichi. Script memasang `isc-dhcp-relay`, mengatur server tujuan `10.89.4.10`, dan mengaktifkan IPv4 forwarding. Konfigurasi yang digunakan pada pengujian adalah:
+
+```conf
+SERVERS="10.89.4.10"
+INTERFACES="eth2 eth3 eth4"
+OPTIONS=""
+```
+
+Daftar interface di atas mengikuti konfigurasi yang sudah digunakan dan diuji dalam lingkungan proyek ini. Soal meminta relay untuk Network 2 (`eth2`) dan Network 3 (`eth3`); keberadaan `eth4` pada konfigurasi saat ini dipertahankan karena relay sebelumnya berjalan dengan daftar tersebut.
+
+### Verifikasi
+
+```bash
+cat /etc/default/isc-dhcp-relay
+service isc-dhcp-relay status
+pgrep -af dhcrelay
+```
+
+Pada klien Network 2 dan Network 3, pastikan `eth0` memakai DHCP, kemudian minta lease:
+
+```bash
+udhcpc -i eth0 -n -q
+ip -4 addr show dev eth0
+ip route
+```
+
+Kriteria: klien dari kedua subnet memperoleh lease dari Tengen melalui relay.
+
+## Soal 4 — DHCP pool berdasarkan MAC
+
+### Tujuan dan pembagian pool
+
+Tengen membedakan klien Network 2 melalui DHCP `class`/`subclass` berdasarkan MAC Address.
+
+| Class | Klien | MAC Address | Pool |
+|---|---|---|---|
+| `pool1` | Itadori | `02:42:f3:c2:a9:00` | `10.89.2.10–10.89.2.35` |
+| `pool1` | Fushiguro | `02:42:fc:e1:eb:00` | `10.89.2.10–10.89.2.35` |
+| `pool2` | Zenin | `02:42:31:3c:b7:00` | `10.89.2.70–10.89.2.95` |
+| `pool2` | Okkotsu | `02:42:a4:79:21:00` | `10.89.2.70–10.89.2.95` |
+
+Rentang `10.89.2.36–10.89.2.69` tidak boleh diberikan kepada klien. Gunakan `allow members of` untuk memastikan masing-masing class hanya memperoleh alamat dari pool yang ditentukan.
+
+### Verifikasi
+
+Pada Tengen:
+
+```bash
+dhcpd -t -cf /etc/dhcp/dhcpd.conf
+service isc-dhcp-server status
+grep -nE 'class |subclass |range |subnet ' /etc/dhcp/dhcpd.conf
+grep -E 'lease |hardware ethernet|client-hostname' /var/lib/dhcp/dhcpd.leases
+```
+
+Di setiap klien:
+
+```bash
+udhcpc -i eth0 -n -q
+ip -4 addr show dev eth0
+ip route
+```
+
+Hasil pengujian yang tercatat: Itadori `10.89.2.10`, Fushiguro `10.89.2.11`, Zenin `10.89.2.70`, dan Okkotsu `10.89.2.71`.
+
+## Soal 5 — Short lease dan long lease
+
+### Tujuan
+
+Menerapkan masa lease yang berbeda pada Network 3 menggunakan class DHCP berdasarkan MAC Address.
+
+| Class | Klien | MAC Address | Pool | Lease |
+|---|---|---|---|---:|
+| `short_lease` | Ino | `02:42:bd:61:d3:00` | `10.89.3.10–10.89.3.89` | 1800 detik |
+| `short_lease` | Kusakabe | `02:42:45:2a:7e:00` | `10.89.3.10–10.89.3.89` | 1800 detik |
+| `long_lease` | Miwa | `02:42:07:5f:61:00` | `10.89.3.100–10.89.3.199` | 43200 detik |
+
+Konfigurasi DHCP Network 3 juga memberikan:
+
+- Subnet mask: `255.255.255.0`.
+- Gateway: `10.89.3.1`.
+- Broadcast: `10.89.3.255`.
+- DNS: `10.89.1.2` dan `10.89.1.3`.
+- Domain search: `K-51.com`.
+
+Script `/root/no5.sh` pada Tengen mempertahankan Pool 1 dan Pool 2 dari Soal 4 lalu menambahkan class short/long lease. Pastikan Miwa dan klien terkait memakai DHCP, bukan IP statis.
+
+### Verifikasi
+
+```bash
+dhcpd -t -cf /etc/dhcp/dhcpd.conf
+service isc-dhcp-server status
+grep -nE 'class |subclass |range |default-lease-time|max-lease-time|domain-search' /etc/dhcp/dhcpd.conf
+```
+
+Uji klien dengan meminta lease baru. Untuk membuktikan durasi lease, periksa DHCP Offer/ACK pada packet capture. Hasil yang pernah terlihat pada Kusakabe adalah lease `1800` detik, gateway `10.89.3.1`, DNS `10.89.1.2` dan `10.89.1.3`, serta domain search `K-51.com`.
+
+## Soal 6 — DHCP fixed address Kugisaki
+
+### Tujuan
+
+Memberikan alamat tetap `10.89.3.99` kepada Kugisaki berdasarkan MAC Address `02:42:42:0e:67:00`.
+
+Alamat `.3.99` berada di luar pool short lease `.3.10–.3.89` dan long lease `.3.100–.3.199`.
+
+### Verifikasi
+
+Pada Tengen:
+
+```bash
+dhcpd -t -cf /etc/dhcp/dhcpd.conf
+grep -A3 -B1 'host kugisaki' /etc/dhcp/dhcpd.conf
+```
+
+Deklarasi yang diharapkan:
+
+```conf
+host kugisaki {
+    hardware ethernet 02:42:42:0e:67:00;
+    fixed-address 10.89.3.99;
+}
+```
+
+Di Kugisaki, pastikan interface menggunakan DHCP, kemudian minta lease baru:
+
+```bash
+pkill udhcpc 2>/dev/null || true
+ip addr flush dev eth0
+udhcpc -i eth0 -n -q -f
+ip -4 addr show dev eth0
+ip route
+```
+
+Hasil pengujian: Kugisaki memperoleh `10.89.3.99` melalui DHCP, bukan karena alamat statis yang dikonfigurasi manual.
+
+## Soal 7 — Validasi konfigurasi seluruh klien
+
+### Tujuan
+
+Memastikan klien Network 2 dan Network 3 menerima IP, subnet mask, gateway, broadcast, DNS, domain search, dan lease yang sesuai.
+
+### Pemeriksaan di klien
+
+Jalankan pada setiap klien yang relevan:
+
+```bash
+hostname
+ip -4 addr show dev eth0
+ip route
+cat /etc/resolv.conf
+cat /etc/network/interfaces
+```
+
+### Pemeriksaan di Tengen
+
+```bash
+bash /root/no7.sh
+cat /var/lib/dhcp/dhcpd.leases
+grep -inB4 -A15 '02:42:f3:c2:a9:00' /var/lib/dhcp/dhcpd.leases
+```
+
+Ulangi pencarian lease untuk MAC Address klien lain yang perlu diverifikasi. Bedakan catatan lease historis dengan lease aktif saat pemeriksaan.
+
+Hasil alamat yang tercatat pada pengujian:
+
+| Klien | IP yang diharapkan/tercatat | Kebijakan |
+|---|---|---|
+| Itadori | `10.89.2.10` | Pool 1 |
+| Fushiguro | `10.89.2.11` | Pool 1 |
+| Zenin | `10.89.2.70` | Pool 2 |
+| Okkotsu | `10.89.2.71` | Pool 2 |
+| Ino | `.3.10–.3.89` (lease mencatat `.3.11`) | Short lease |
+| Kusakabe | `10.89.3.10` | Short lease |
+| Miwa | `.3.100–.3.199` (lease mencatat `.3.101`) | Long lease |
+| Kugisaki | `10.89.3.99` | Fixed address |
+
+Periksa IP aktual pada terminal Ino dan Miwa, lalu bukti masa lease Miwa selama `43200` detik sebelum menyatakan seluruh aspek validasi selesai.
+
+## Soal 8 — Packet capture DHCP
+
+### Tujuan
+
+Membuktikan urutan DHCP DORA dan memeriksa DHCP Server, alamat yang ditawarkan, lease time, serta field `giaddr`.
+
+### Prosedur
+
+1. Mulai capture di Wireshark pada jalur yang dilewati request DHCP; sesuai soal, `tcpdump` di Tengen juga dapat digunakan bila diperlukan.
+2. Gunakan filter Wireshark `dhcp` atau `bootp`, sesuai versi Wireshark.
+3. Paksa satu klien Network 2 atau Network 3 meminta lease baru.
+4. Identifikasi urutan `DHCPDISCOVER → DHCPOFFER → DHCPREQUEST → DHCPACK`.
+5. Catat Server Identifier, Your-IP/yiaddr, lease time, subnet mask, router, DNS, domain search, dan `giaddr`.
+
+Perintah capture alternatif pada Tengen:
+
+```bash
+tcpdump -ni eth0 -vvv 'udp port 67 or udp port 68'
+```
+
+Dalam pengujian Itadori, server yang terlihat adalah `10.89.4.10`, alamat yang ditawarkan `10.89.2.10`, dan lease time `600` detik. `giaddr` harus sesuai dengan interface Jichi yang menerima request klien; untuk Network 2 nilainya diharapkan `10.89.2.1`.
+
+## Soal 9 — Simulasi gangguan DHCP Relay
+
+### Tujuan
+
+Membuktikan bahwa klien gagal mendapatkan lease baru ketika Relay dihentikan dan kembali berhasil setelah layanan Relay dipulihkan.
+
+### Prosedur
+
+1. Sebelum gangguan, minta lease baru pada Itadori dan simpan output bahwa lease berhasil.
+2. Pada Jichi, hentikan relay:
+
+   ```bash
+   service isc-dhcp-relay stop
+   pgrep -af dhcrelay
+   ```
+
+3. Pada klien uji, lepaskan/minta ulang lease sesuai utilitas yang tersedia. Contoh:
+
+   ```bash
+   pkill udhcpc 2>/dev/null || true
+   ip addr flush dev eth0
+   udhcpc -i eth0 -n -q -f
+   ```
+
+4. Catat kegagalan klien mendapatkan lease selama relay mati.
+5. Pulihkan relay pada Jichi:
+
+   ```bash
+   service isc-dhcp-relay start
+   pgrep -af dhcrelay
+   ```
+
+6. Ulangi permintaan lease dan pastikan klien kembali memperoleh IP dari pool yang benar serta gateway awalnya.
+
+Pada pengujian yang dilakukan, Itadori berhasil memperoleh `10.89.2.10` sebelum gangguan, gagal memperoleh lease ketika relay dihentikan, lalu kembali berhasil setelah relay berjalan lagi.
+
+## Soal 10 — Persistensi setelah restart
+
+### Tujuan
+
+Memastikan konfigurasi Jichi dan layanan DHCP/Relay dapat berjalan kembali setelah node direstart.
+
+### Pemeriksaan Jichi setelah restart
+
+```bash
+ip -br -4 addr
+ip route
+sysctl net.ipv4.ip_forward
+iptables -t nat -S POSTROUTING
+pgrep -af dhcrelay
+```
+
+Kondisi yang diharapkan: interface Jichi tetap memakai gateway `.1.1`–`.4.1`, default route WAN tetap tersedia, `ip_forward = 1`, aturan `MASQUERADE` tetap ada, dan proses DHCP Relay berjalan mengarah ke `10.89.4.10`.
+
+### Pemeriksaan Tengen setelah restart
+
+```bash
+ip -br -4 addr
+ip route
+dhcpd -t -cf /etc/dhcp/dhcpd.conf
+service isc-dhcp-server status
+pgrep -af dhcpd
+```
+
+Lanjutkan dengan menguji klien Itadori, Miwa, dan Kugisaki. Ketiganya harus memperoleh konfigurasi sesuai pool, masa lease, serta reservasinya.
+
+### Hasil yang telah terlihat
+
+Jichi tetap memiliki IP interface, routing, `ip_forward=1`, dan aturan NAT setelah restart. Proses relay berjalan kembali, Itadori memperoleh `10.89.2.10` dari Tengen dengan lease 600 detik, Miwa mendapatkan alamat dari pool long lease, dan Kugisaki mendapatkan `10.89.3.99`.
+
+## Soal 11 — DNS Master dan Slave
+
+### Tujuan
+
+Membangun zona DNS `jujutsu.K-51.com` dengan Utahime sebagai Master dan Shoko sebagai Slave, meliputi SOA, NS, `allow-transfer`, serta sinkronisasi berdasarkan serial zona.
+
+### Utahime (Master)
+
+Berkas utama:
+
+- `/etc/bind/named.conf.options`
+- `/etc/bind/named.conf.local`
+- `/etc/bind/db.jujutsu.K-51.com`
+
+Deklarasi zona Master yang digunakan:
+
+```conf
+zone "jujutsu.K-51.com" {
+    type master;
+    file "/etc/bind/db.jujutsu.K-51.com";
+    allow-transfer { 10.89.1.3; };
+    also-notify { 10.89.1.3; };
+    notify yes;
+};
+```
+
+File zona memiliki SOA dengan serial yang dinaikkan setiap kali zona diubah, NS untuk Utahime dan Shoko, serta A record untuk kedua nameserver.
+
+### Shoko (Slave)
+
+Deklarasi zona utama:
+
+```conf
+zone "jujutsu.K-51.com" {
+    type slave;
+    masters { 10.89.1.2; };
+    file "/var/cache/bind/db.jujutsu.K-51.com";
+};
+```
+
+### Validasi dan pengujian
+
+Di Utahime:
+
+```bash
+named-checkconf
+named-checkzone jujutsu.K-51.com /etc/bind/db.jujutsu.K-51.com
+service named status
+dig @10.89.1.2 jujutsu.K-51.com SOA +short
+dig @10.89.1.2 jujutsu.K-51.com NS +short
+```
+
+Di Shoko:
+
+```bash
+named-checkconf
+service named status
+ls -l /var/cache/bind/db.jujutsu.K-51.com
+dig @10.89.1.3 jujutsu.K-51.com SOA +short
+dig @10.89.1.3 jujutsu.K-51.com NS +short
+```
+
+Dari klien, lakukan query SOA ke kedua server. Naikkan serial pada file zona Utahime, validasi dengan `named-checkzone`, kemudian jalankan `service named reload`. Query SOA Shoko harus menunjukkan serial baru tanpa restart manual pada Shoko. Layanan menggunakan `named` pada lingkungan Debian yang digunakan.
+
+## Soal 12 — A, CNAME, PTR, dan DNS Forwarder
+
+### Tujuan
+
+Mengarahkan domain utama ke Gojo, membuat alias `www`, mengaktifkan Reverse DNS untuk IP Gojo, dan meneruskan query eksternal melalui `192.168.122.1`.
+
+### Record zona utama
+
+```dns
+@       IN  A       10.89.1.4
+www     IN  CNAME   jujutsu.K-51.com.
+utahime IN  A       10.89.1.2
+shoko   IN  A       10.89.1.3
+gojo    IN  A       10.89.1.4
+```
+
+Serial zona utama dinaikkan setiap kali isi zona diubah. Gojo harus memakai IP `10.89.1.4`, tidak boleh berbenturan dengan IP Shoko `10.89.1.3`.
+
+### Forwarder
+
+Pada `/etc/bind/named.conf.options`, konfigurasi meliputi:
+
+```conf
+allow-query { 10.89.0.0/16; localhost; };
+recursion yes;
+allow-recursion { 10.89.0.0/16; localhost; };
+forwarders { 192.168.122.1; };
+forward only;
+```
+
+### Reverse DNS
+
+Zona Reverse DNS untuk subnet `10.89.1.0/24` adalah `1.89.10.in-addr.arpa`. File `/etc/bind/db.10.89.1` berisi SOA, NS, dan PTR:
+
+```dns
+4 IN PTR jujutsu.K-51.com.
+```
+
+Zona reverse didaftarkan sebagai Master pada Utahime dan sebagai Slave pada Shoko supaya data PTR tersedia dari kedua DNS.
+
+### Validasi dan pengujian
+
+Di Utahime:
+
+```bash
+named-checkconf
+named-checkzone jujutsu.K-51.com /etc/bind/db.jujutsu.K-51.com
+named-checkzone 1.89.10.in-addr.arpa /etc/bind/db.10.89.1
+service named reload
+```
+
+Dari klien:
+
+```bash
+dig @10.89.1.2 jujutsu.K-51.com A +short
+dig @10.89.1.2 www.jujutsu.K-51.com CNAME +short
+dig @10.89.1.2 -x 10.89.1.4 +short
+dig @10.89.1.3 www.jujutsu.K-51.com CNAME +short
+dig @10.89.1.3 -x 10.89.1.4 +short
+dig @10.89.1.2 google.com A +short
+dig @10.89.1.3 google.com A +short
+ping -c 3 google.com
+```
+
+Hasil yang sudah terlihat pada pengerjaan: A record mengembalikan `10.89.1.4`; CNAME dan PTR mengembalikan `jujutsu.K-51.com.`; kedua DNS menjawab query `google.com`; dan klien menerima balasan ICMP dari `google.com` pada pengujian.
+
+## Soal 13 — MariaDB Master-Slave
+
+### Tujuan
+
+Menyiapkan Yaga sebagai MariaDB Master dan Inumaki sebagai Slave, membuat database `db_shibuya_K-51` dengan tabel `request_logs`, mengaktifkan binary logging, dan melakukan replikasi dari Master ke Slave.
+
+### Yaga (Master)
+
+Alamat yang digunakan pada draft: `10.89.4.22`. Script `/root/no13.sh` pada Yaga memasang MariaDB dan mengatur file `/etc/mysql/mariadb.conf.d/60-replication.cnf` dengan nilai utama:
+
+```ini
+[mysqld]
+bind-address = 0.0.0.0
+server-id = 1
+log-bin = mysql-bin
+binlog_format = ROW
+```
+
+Database dan tabel yang dibuat:
+
+```sql
+CREATE DATABASE IF NOT EXISTS `db_shibuya_K-51`;
+USE `db_shibuya_K-51`;
+CREATE TABLE IF NOT EXISTS request_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    worker VARCHAR(50),
+    endpoint VARCHAR(255),
+    client_ip VARCHAR(45),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+Script juga membuat pengguna replikasi `repl` dan pengguna aplikasi `shibuya` dengan izin yang dibatasi ke jaringan `10.89.4.0/24`.
+
+### Inumaki (Slave)
+
+Script `/root/no13.sh` pada Inumaki mengatur `server-id = 2`, `relay-log = relay-bin`, serta `read_only = 1`, kemudian menghubungkan Slave ke Yaga menggunakan `CHANGE MASTER TO`.
+
+Contoh parameter replikasi pada draft:
+
+```sql
+CHANGE MASTER TO
+    MASTER_HOST='10.89.4.22',
+    MASTER_USER='repl',
+    MASTER_PASSWORD='replpass',
+    MASTER_PORT=3306,
+    MASTER_LOG_FILE='<nama-binlog-dari-Yaga>',
+    MASTER_LOG_POS=4;
+START SLAVE;
+```
+
+Gunakan nama binary log yang benar-benar diperoleh dari `SHOW BINARY LOGS` di Yaga; jangan menebak nama file log.
+
+### Verifikasi
+
+Di Yaga:
+
+```bash
+mysql -u root -e "SHOW MASTER STATUS;"
+mysql -u root -e "SHOW BINARY LOGS;"
+```
+
+Di Inumaki:
+
+```bash
+mysql -u root -e "SHOW SLAVE STATUS\G"
+mysql -u root -e "SHOW DATABASES;"
+```
+
+Pastikan `Slave_IO_Running` dan `Slave_SQL_Running` bernilai `Yes`, tanpa error replikasi. Tambahkan satu baris baru ke `request_logs` pada Master dan periksa bahwa baris yang sama muncul di Slave. Verifikasi juga akses remote dari node Network 4.
+
+## Soal 14 — Frontend dan API worker
+
+### Tujuan
+
+Menyiapkan Maki dan Panda sebagai frontend menggunakan Nginx/PHP-FPM, serta Nanami, Todo, dan Kirara sebagai API worker yang mencatat request ke database Yaga. Akses langsung ke worker dibatasi.
+
+### Frontend Maki dan Panda
+
+Script `/root/no14.sh` memasang Nginx dan PHP-FPM, menampilkan hostname worker pada halaman frontend, dan membuat virtual host untuk `jujutsu.K-51.com` serta `www.jujutsu.K-51.com`. Akses HTTP langsung dibatasi agar hanya Gojo (`10.89.1.4`) dan localhost yang diizinkan.
+
+### API Nanami, Todo, dan Kirara
+
+Script `/root/no14.sh` memasang Nginx, PHP-FPM, `php-mysql`, dan `mariadb-client`; membuat endpoint API yang mengembalikan JSON dan mencatat request ke tabel `request_logs` pada Yaga. API worker hanya menerima akses dari Geto (`10.89.4.11`) dan localhost. Data request mencakup nama worker, endpoint, client IP, serta timestamp.
+
+### Verifikasi
+
+Dari klien, akses langsung ke worker seharusnya ditolak (`403`):
+
+```bash
+curl -i http://10.89.4.12/
+curl -i http://10.89.4.14/api
+```
+
+Dari Gojo, uji akses ke frontend:
+
+```bash
+curl -H 'Host: jujutsu.K-51.com' http://10.89.4.12/
+curl -H 'Host: jujutsu.K-51.com' http://10.89.4.13/
+```
+
+Dari Geto, uji API:
+
+```bash
+curl http://10.89.4.14/api
+curl http://10.89.4.15/api
+curl http://10.89.4.16/api
+```
+
+Pada Yaga, periksa log:
+
+```bash
+mysql -u root -e 'SELECT * FROM `db_shibuya_K-51`.request_logs ORDER BY id DESC LIMIT 5;'
+```
+
+Pastikan izin akses diterapkan sesuai sumber trafik: frontend hanya lewat Gojo, API hanya lewat Geto.
+
+## Soal 15 — Internal Load Balancer Geto
+
+### Tujuan
+
+Mengatur Nginx pada Geto untuk membagi trafik API antara Nanami dan Todo menggunakan Weighted Round Robin dengan bobot 3:1.
+
+### Konfigurasi upstream
+
+Script `/root/no15.sh` pada Geto memakai:
+
+```nginx
+upstream api_cluster {
+    zone api_cluster 64k;
+    server 10.89.4.14 weight=3;
+    server 10.89.4.15 weight=1;
+}
+```
+
+Server Nginx meneruskan request ke `api_cluster` dan mengirim header `Host`, `X-Real-IP`, serta `X-Forwarded-For`.
+
+### Verifikasi
+
+Uji dari Geto:
+
+```bash
+curl http://127.0.0.1/api
+```
+
+Uji beberapa request dari node Network 4:
+
+```bash
+for i in $(seq 1 20); do
+  curl -s http://10.89.4.11/api | grep -o '"worker":"[a-z]*"'
+done | sort | uniq -c
+```
+
+Periksa distribusi catatan di Yaga:
+
+```bash
+mysql -u root -e 'SELECT worker, COUNT(*) FROM `db_shibuya_K-51`.request_logs GROUP BY worker;'
+```
+
+Karena pembagian request bergantung pada kondisi runtime dan jumlah sampel, gunakan jumlah request yang cukup dan jelaskan rasio yang benar-benar teramati.
+
+## Soal 16 — Public reverse proxy Gojo
+
+### Tujuan
+
+Menjadikan Gojo sebagai pintu masuk publik. Request path `/` diteruskan secara Round Robin ke Maki dan Panda, sedangkan request `/api` diteruskan ke Geto.
+
+### Konfigurasi utama
+
+Script `/root/no16.sh` pada Gojo memasang Nginx dan membuat upstream frontend:
+
+```nginx
+upstream frontend_cluster {
+    zone frontend_cluster 64k;
+    server 10.89.4.12;
+    server 10.89.4.13;
+}
+```
+
+Pada virtual host `jujutsu.K-51.com` dan `www.jujutsu.K-51.com`:
+
+- `location /` menggunakan `frontend_cluster`.
+- `location /api` meneruskan request ke Geto (`10.89.4.11`).
+- Header `Host`, `X-Real-IP`, dan `X-Forwarded-For` diteruskan ke upstream.
+
+### Verifikasi
+
+Pastikan klien menggunakan DNS yang benar:
+
+```bash
+cat /etc/resolv.conf
+nslookup jujutsu.K-51.com
+```
+
+Uji Round Robin frontend:
+
+```bash
+for i in $(seq 1 6); do
+  curl -s http://jujutsu.K-51.com/ | grep -o '<b>[a-z]*</b>'
+done
+```
+
+Uji domain www:
+
+```bash
+curl -s http://www.jujutsu.K-51.com/ | grep -o '<b>[a-z]*</b>'
+```
+
+Uji load balancer API:
+
+```bash
+for i in $(seq 1 8); do
+  curl -s http://jujutsu.K-51.com/api | grep -o '"worker":"[a-z]*"'
+done | sort | uniq -c
+```
+
+Uji akses langsung ke worker frontend/API dari klien dan pastikan ditolak sesuai kebijakan akses.
+
+## Soal 17 — Penerusan IP klien
+
+### Tujuan
+
+Mencatat IP asli klien pada `request_logs`, bukan hanya IP proxy. Geto hanya mempercayai informasi alamat klien ketika request datang dari Gojo yang tepercaya.
+
+### Konfigurasi
+
+Gojo meneruskan `X-Real-IP` dan `X-Forwarded-For`. Pada Geto, konfigurasi menggunakan `set_real_ip_from 10.89.1.4` dan `real_ip_header X-Real-IP`. API worker memeriksa apakah request berasal dari proxy tepercaya (Geto) sebelum mempercayai `X-Real-IP` dan menyimpan nilai `client_ip` ke database.
+
+Periksa konfigurasi dengan:
+
+```bash
+grep -n 'X-Real-IP\|X-Forwarded-For' /etc/nginx/sites-available/gojo-proxy
+grep -n 'trusted_proxy' /var/www/api/index.php
+```
+
+### Verifikasi
+
+Dari klien Network 2 dan Network 3, request ke API melalui domain publik:
+
+```bash
+curl -s http://jujutsu.K-51.com/api
+```
+
+Periksa database pada Yaga:
+
+```bash
+mysql -u root -e 'SELECT id, worker, endpoint, client_ip, created_at FROM `db_shibuya_K-51`.request_logs ORDER BY id DESC LIMIT 10;'
+```
+
+Uji header palsu dari Network 4 ke Geto untuk memastikan header buatan klien yang tidak tepercaya tidak dianggap sebagai IP asli:
+
+```bash
+curl -s -H 'X-Real-IP: 1.2.3.4' http://10.89.4.11/api
+```
+
+Evaluasi output API dan data yang tersimpan. Bukti yang dicari adalah `client_ip` klien yang benar untuk request melalui Gojo, bukan IP Gojo/Geto maupun nilai header palsu dari sumber tidak tepercaya.
+
+## Soal 18 — API fallback ke Kirara
+
+### Tujuan
+
+Menjadikan Kirara sebagai server API cadangan ketika Nanami dan Todo gagal melayani request. Konfigurasi upstream di Geto menggunakan passive health check dengan `max_fails=2` dan `fail_timeout=5s`.
+
+### Konfigurasi upstream
+
+Script `/root/no18.sh` pada Geto memakai pola berikut:
+
+```nginx
+upstream api_cluster {
+    zone api_cluster 64k;
+    server 10.89.4.14 weight=3 max_fails=2 fail_timeout=5s;
+    server 10.89.4.15 weight=1 max_fails=2 fail_timeout=5s;
+    server 10.89.4.16 backup;
+}
+```
+
+Konfigurasi juga memungkinkan Nginx mencoba upstream lain saat terjadi error koneksi, timeout, atau status upstream tertentu.
+
+### Verifikasi
+
+Dalam kondisi normal, lakukan beberapa request:
+
+```bash
+for i in $(seq 1 8); do
+  curl -s http://jujutsu.K-51.com/api | grep -o '"worker":"[a-z]*"'
+done | sort | uniq -c
+```
+
+Pastikan Kirara siap menjawab endpoint yang kompatibel:
+
+```bash
+curl -s http://10.89.4.16/api
+```
+
+Kemudian uji failover secara terkendali di lab: hentikan layanan Nginx atau PHP-FPM/API pada Nanami dan Todo, lalu kirim request melalui domain publik dan periksa bahwa respons berasal dari Kirara serta tidak menghasilkan `502 Bad Gateway`. Setelah pengujian, pulihkan layanan Nanami dan Todo. Periksa catatan database untuk melihat worker yang melayani request.
+
+## Soal 19 — Proxy cache dan rate limiting
+
+### Tujuan
+
+Mengaktifkan cache untuk frontend selama 10 menit, menambahkan header `X-Cache-Status`, dan membatasi request `/api` menjadi 10 request per detik per IP klien.
+
+### Konfigurasi utama di Gojo
+
+Script `/root/no19.sh` mengatur zona cache serta rate limit pada konteks HTTP Nginx:
+
+```nginx
+proxy_cache_path /var/cache/nginx/frontend levels=1:2 keys_zone=frontend_cache:10m max_size=100m inactive=10m use_temp_path=off;
+limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+```
+
+Pada lokasi frontend (`/`), aktifkan `proxy_cache`, masa berlaku cache `200`/`302` selama `10m`, dan header `X-Cache-Status`. Lokasi `/api` menggunakan `limit_req zone=api_limit` dan `limit_req_status 429`. Endpoint API tidak dimaksudkan ikut dicache oleh aturan frontend.
+
+### Verifikasi cache
+
+Kosongkan cache sebelum pengujian jika diperlukan:
+
+```bash
+rm -rf /var/cache/nginx/frontend/*
+service nginx reload
+```
+
+Dari klien:
+
+```bash
+for i in 1 2 3; do
+  curl -s -D - -o /dev/null http://jujutsu.K-51.com/ | grep -i x-cache-status
+done
+```
+
+Akses awal yang layak dicache diharapkan menunjukkan `MISS`; request berikutnya yang menggunakan respons cache dapat menunjukkan `HIT`.
+
+Uji bahwa API tidak menggunakan cache frontend:
+
+```bash
+curl -s -D - -o /dev/null http://jujutsu.K-51.com/api | grep -i x-cache-status
+```
+
+### Verifikasi rate limiting
+
+Uji request berjarak yang wajar:
+
+```bash
+for i in $(seq 1 5); do
+  curl -s -o /dev/null -w '%{http_code}\n' http://jujutsu.K-51.com/api
+  sleep 0.2
+done
+```
+
+Kemudian kirim burst request untuk mengamati respons ketika limit terlampaui:
+
+```bash
+(for i in $(seq 1 30); do
+  curl -s -o /dev/null -w '%{http_code}\n' http://jujutsu.K-51.com/api &
+done; wait) | sort | uniq -c
+```
+
+Periksa log Gojo:
+
+```bash
+tail -n 20 /var/log/nginx/gojo_access.log
+grep 'limiting requests' /var/log/nginx/gojo_error.log | tail -n 5
+```
+
+Respons `429` menjadi bukti bahwa rate limiting menolak request yang melampaui kebijakan.
+
+## Soal 20 — Benchmark dengan ApacheBench
+
+### Tujuan
+
+Mengukur performa layanan dengan ApacheBench dari Kusakabe, mencatat Requests per Second (RPS), latensi, request gagal, dan efek rate limit pada endpoint API.
+
+### Parameter pengujian
+
+- Baseline frontend: `http://jujutsu.K-51.com/`
+- API dengan rate limit: `http://jujutsu.K-51.com/api`
+- API tanpa rate limit: URL `/api`, setelah limit dimatikan sementara khusus untuk eksperimen
+- Jumlah request: `600` (`-n 600`)
+- Concurrency: `30` (`-c 30`)
+
+### Script dan hasil
+
+Di Kusakabe, script `/root/no20.sh` menjalankan ApacheBench dan menyimpan hasil di `/root/no20-hasil/`. Pastikan `apache2-utils` tersedia (pada Alpine dapat dipasang dengan `apk add apache2-utils`).
+
+Di Gojo, script `/root/no20-log.sh` membantu membersihkan dan menganalisis access/error log serta mengaktifkan atau menonaktifkan rate limit untuk perbandingan.
+
+Pengujian baseline frontend:
+
+1. Di Gojo: `bash /root/no20-log.sh reset`
+2. Di Kusakabe: `sh /root/no20.sh web`
+3. Di Gojo: `bash /root/no20-log.sh analyze`
+
+Pengujian API dengan rate limit:
+
+1. Di Gojo: `bash /root/no20-log.sh reset`
+2. Di Kusakabe: `sh /root/no20.sh api`
+3. Di Gojo: `bash /root/no20-log.sh analyze`
+
+Perbandingan API tanpa rate limit:
+
+1. Di Gojo: `bash /root/no20-log.sh limit-off`
+2. Di Gojo: `bash /root/no20-log.sh reset`
+3. Di Kusakabe: `sh /root/no20.sh api-nolimit`
+4. Di Gojo: `bash /root/no20-log.sh analyze`
+5. **Wajib pulihkan rate limit setelah tes:** `bash /root/no20-log.sh limit-on`
+
+Laporan benchmark harus mencatat `Complete requests`, `Failed requests`, `Requests per second`, `Time per request`, distribusi latensi, status HTTP, status upstream, cache, dan log rate limit. Gunakan angka yang benar-benar muncul di hasil ApacheBench; jangan mengisi angka perkiraan.
+
+## Daftar bukti dokumentasi
+
+Disarankan menyimpan screenshot terminal atau hasil command dengan folder per nomor:
+
+```text
+Bukti_Pengujian/
+├── Soal_01_Routing_NAT/
+├── Soal_02_DHCP_Server/
+├── Soal_03_DHCP_Relay/
+├── Soal_04_DHCP_Pool_MAC/
+├── Soal_05_Lease_Time/
+├── Soal_06_Fixed_Address/
+├── Soal_07_Validasi_Clients/
+├── Soal_08_DHCP_Capture/
+├── Soal_09_Relay_Failure/
+├── Soal_10_Restart_Persistence/
+├── Soal_11_DNS_Master_Slave/
+├── Soal_12_DNS_A_CNAME_PTR_Forwarder/
+├── Soal_13_MariaDB_Replication/
+├── Soal_14_Frontend_API/
+├── Soal_15_Load_Balancer/
+├── Soal_16_Reverse_Proxy/
+├── Soal_17_Client_IP_Headers/
+├── Soal_18_API_Failover/
+├── Soal_19_Cache_Rate_Limit/
+└── Soal_20_ApacheBench/
+```
+
+Sertakan bukti konfigurasi dan bukti pengujian, bukan hanya screenshot script. Untuk Soal 8, lampirkan paket DORA. Untuk Soal 11, lampirkan perbandingan serial Master–Slave. Untuk Soal 19, tunjukkan `MISS`, `HIT`, dan respons `429`. Untuk Soal 20, lampirkan keluaran ApacheBench dan analisis log.
+
+## Backup dan penutupan GNS3
+
+Sebelum berhenti, simpan proyek dengan `Ctrl+S`, ekspor proyek GNS3 jika tersedia, dan salin script serta file konfigurasi penting ke luar container. Arsip yang tersimpan di `/root` tetap berada di dalam container dan bukan pengganti backup di laptop.
+
+Setelah backup:
+
+1. Simpan proyek GNS3.
+2. Stop seluruh node menggunakan kontrol GNS3.
+3. Simpan proyek sekali lagi.
+4. Tutup GNS3 secara normal.
+
+## Kesimpulan
+
+Praktikum Modul 3 mencakup pemulihan jaringan, DHCP server dan relay, pengaturan pool dan lease, validasi serta analisis paket DHCP, DNS Master-Slave, database replication, frontend dan API worker, load balancing, reverse proxy, penerusan IP klien, failover, cache/rate limiting, serta benchmarking. Setiap nomor harus dibuktikan melalui validasi konfigurasi dan pengujian aktual. Hasil akhir, screenshot, dan angka pengujian perlu disesuaikan dengan kondisi nyata proyek GNS3 yang digunakan.
