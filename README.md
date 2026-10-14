@@ -4,8 +4,8 @@
 
 | Nama | NRP |
 |---|---|
-| Muhammad Hugo Rayandra E | 5027251076 |
 | Arrumanta Ekna Luhkinasih | 5027251044 |
+| Muhammad Hugo Rayandra E | 5027251076 |
 
 **Jaringan internal:** `10.89.0.0/16`, dibagi menjadi empat subnet `/24`  
 **Lingkungan:** GNS3, Docker, Debian/Alpine, ISC DHCP, BIND9, MariaDB, Nginx, PHP-FPM, dan ApacheBench
