@@ -34,8 +34,6 @@
 - [Soal 18 — API fallback ke Kirara](#soal-18--api-fallback-ke-kirara)
 - [Soal 19 — Proxy cache dan rate limiting](#soal-19--proxy-cache-dan-rate-limiting)
 - [Soal 20 — Benchmark dengan ApacheBench](#soal-20--benchmark-dengan-apachebench)
-- [Daftar bukti dokumentasi](#daftar-bukti-dokumentasi)
-- [Backup dan penutupan GNS3](#backup-dan-penutupan-gns3)
 
 ## Topologi dan alamat IP
 
