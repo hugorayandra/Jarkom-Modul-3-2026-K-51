@@ -1,4 +1,4 @@
-# Jarkom-Modul-3-2026-K-51
+# Modul 3 - Pemulihan Jaringan dan Layanan Jujutsu High
 
 ## Kelompok K-51
 
@@ -6,8 +6,6 @@
 |---|---|
 | Muhammad Hugo Rayandra E | 5027251076 |
 | Arrumanta Ekna Luhkinasih | 5027251044 |
-
-## Pemulihan Jaringan dan Layanan Jujutsu High
 
 **Jaringan internal:** `10.89.0.0/16`, dibagi menjadi empat subnet `/24`  
 **Lingkungan:** GNS3, Docker, Debian/Alpine, ISC DHCP, BIND9, MariaDB, Nginx, PHP-FPM, dan ApacheBench
