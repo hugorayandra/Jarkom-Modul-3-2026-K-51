@@ -567,16 +567,13 @@ dig @10.89.1.3 jujutsu.K-51.com NS +short
 Dari klien, lakukan query SOA ke kedua server. Naikkan serial pada file zona Utahime, validasi dengan `named-checkzone`, kemudian jalankan `service named reload`. Query SOA Shoko harus menunjukkan serial baru tanpa restart manual pada Shoko. Layanan menggunakan `named` pada lingkungan Debian yang digunakan.
 
 ### Bukti 11.1 — Validasi Zona Master
-![Validasi DNS Master](assets/no.png)
+![Validasi DNS Master](assets/no11.2.png)
 
 ### Bukti 11.2 — Query SOA dan NS Master
-![SOA dan NS Utahime](Bukti_Pengujian/Soal_11/02-master-soa-ns.png)
+![SOA dan NS Utahime](assets/no11.4.png)
 
 ### Bukti 11.3 — Zona pada Slave
 ![Zona hasil transfer Shoko](assets/no11.png)
-
-### Bukti 11.4 — Sinkronisasi Serial
-![Serial zona Master dan Slave](assets/no11 (2).png)
 
 ### Bukti 11.5 — Query dari Klien
 ![Query DNS dari klien](Bukti_Pengujian/Soal_11/05-client-dig.png)
