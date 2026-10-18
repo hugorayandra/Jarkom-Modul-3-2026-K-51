@@ -246,9 +246,6 @@ ip route
 
 Hasil pengujian yang tercatat: Itadori `10.89.2.10`, Fushiguro `10.89.2.11`, Zenin `10.89.2.70`, dan Okkotsu `10.89.2.71`.
 
-### Bukti 4.1 — Class dan Rentang Pool
-![Konfigurasi pool DHCP](Bukti_Pengujian/Soal_04/01-dhcp-class-pool.png)
-
 ### Bukti 4.2 — Hasil Lease Klien
 ![Hasil lease Pool 1 dan Pool 2](assets/leaseno4.png)
 
