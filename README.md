@@ -73,7 +73,7 @@
 **Catatan:** Pastikan tidak ada dua node memakai IP yang sama. Pada Network 1, Utahime adalah `.1.2`, Shoko `.1.3`, dan Gojo `.1.4`. Domain dan nama database menggunakan `K-51` sesuai kelompok; jika prefix resmi berbeda, sesuaikan sebelum menjalankan script.
 
 ### Bukti 1.1 — TOPOLOGI
-![Bukti Topologi](Bukti_Pengujian/Soal_01/01-ip-interface.png)
+![Bukti Topologi](assets/topologi.png)
 
 ## Persiapan umum
 
