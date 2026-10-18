@@ -576,7 +576,7 @@ Dari klien, lakukan query SOA ke kedua server. Naikkan serial pada file zona Uta
 ![Zona hasil transfer Shoko](assets/no11.png)
 
 ### Bukti 11.4 — Sinkronisasi Serial
-![Serial zona Master dan Slave](Bukti_Pengujian/Soal_11/04-serial-sync.png)
+![Serial zona Master dan Slave](assets/no11 (2).png)
 
 ### Bukti 11.5 — Query dari Klien
 ![Query DNS dari klien](Bukti_Pengujian/Soal_11/05-client-dig.png)
