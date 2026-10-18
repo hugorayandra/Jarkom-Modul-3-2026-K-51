@@ -250,7 +250,7 @@ Hasil pengujian yang tercatat: Itadori `10.89.2.10`, Fushiguro `10.89.2.11`, Zen
 ![Konfigurasi pool DHCP](Bukti_Pengujian/Soal_04/01-dhcp-class-pool.png)
 
 ### Bukti 4.2 — Hasil Lease Klien
-![Hasil lease Pool 1 dan Pool 2](Bukti_Pengujian/Soal_04/02-client-lease.png)
+![Hasil lease Pool 1 dan Pool 2](assets/leaseno4.png)
 
 ---
 
