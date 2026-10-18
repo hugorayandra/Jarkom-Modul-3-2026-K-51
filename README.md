@@ -489,6 +489,15 @@ Lanjutkan dengan menguji klien Itadori, Miwa, dan Kugisaki. Ketiganya harus memp
 
 Jichi tetap memiliki IP interface, routing, `ip_forward=1`, dan aturan NAT setelah restart. Proses relay berjalan kembali, Itadori memperoleh `10.89.2.10` dari Tengen dengan lease 600 detik, Miwa mendapatkan alamat dari pool long lease, dan Kugisaki mendapatkan `10.89.3.99`.
 
+### Bukti 10.1 — Kondisi Jichi Setelah Restart
+![Jichi setelah restart](assets/no10.2.png)
+
+### Bukti 10.2 — DHCP Relay Aktif
+![DHCP Relay setelah restart](assets/no10.png)
+
+### Bukti 10.3 — Hasil Pengujian Klien
+![Klien memperoleh lease setelah restart](assets/no7.2.png)
+
 ---
 
 ## Soal 11 — DNS Master dan Slave
@@ -565,7 +574,7 @@ Dari klien, lakukan query SOA ke kedua server. Naikkan serial pada file zona Uta
 ![Zona hasil transfer Shoko](assets/no11.png)
 
 ### Bukti 11.5 — Query dari Klien
-![Query DNS dari klien](Bukti_Pengujian/Soal_11/05-client-dig.png)
+![Query DNS dari klien](assets/no11.5.png)
 
 ---
 
