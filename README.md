@@ -283,14 +283,9 @@ grep -nE 'class |subclass |range |default-lease-time|max-lease-time|domain-searc
 
 Uji klien dengan meminta lease baru. Untuk membuktikan durasi lease, periksa DHCP Offer/ACK pada packet capture. Hasil yang pernah terlihat pada Kusakabe adalah lease `1800` detik, gateway `10.89.3.1`, DNS `10.89.1.2` dan `10.89.1.3`, serta domain search `K-51.com`.
 
-### Bukti 5.1 — Konfigurasi Lease
-![Konfigurasi short lease dan long lease](Bukti_Pengujian/Soal_05/01-lease-config.png)
-
 ### Bukti 5.2 — Hasil Lease Client
-![Hasil lease klien](Bukti_Pengujian/Soal_05/02-client-lease.png)
-
-### Bukti 5.3 — Lease Time pada Paket DHCP
-![Lease time dari paket DHCP](Bukti_Pengujian/Soal_05/03-lease-packet.png)
+![Hasil lease klien](assets/5.2.png)
+![Lease time dari paket DHCP](assets/no5.png)
 
 ---
 
@@ -336,7 +331,7 @@ Hasil pengujian: Kugisaki memperoleh `10.89.3.99` melalui DHCP, bukan karena ala
 ![Konfigurasi fixed address Kugisaki](Bukti_Pengujian/Soal_06/01-fixed-address-config.png)
 
 ### Bukti 6.2 — IP Kugisaki
-![Hasil Fixed Addres Kugisaki](assets/6.2.png)
+![Hasil Fixed Addres Kugisaki](assets/no6.2.png)
 
 ---
 
@@ -458,7 +453,7 @@ Membuktikan bahwa klien gagal mendapatkan lease baru ketika Relay dihentikan dan
 Pada pengujian yang dilakukan, Itadori berhasil memperoleh `10.89.2.10` sebelum gangguan, gagal memperoleh lease ketika relay dihentikan, lalu kembali berhasil setelah relay berjalan lagi.
 
 ### Bukti 9.2 — Klien Gagal Mendapat Lease
-![Kegagalan DHCP saat relay mati](Bukti_Pengujian/Soal_09/02-dhcp-failure.png)
+![Kegagalan DHCP saat relay mati](assets/no9.2.png)
 
 ### Bukti 9.3 — DHCP Pulih
 ![DHCP berhasil setelah relay dipulihkan](assets/no9.png)
