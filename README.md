@@ -285,6 +285,7 @@ Uji klien dengan meminta lease baru. Untuk membuktikan durasi lease, periksa DHC
 
 ### Bukti 5 — Hasil Lease Client
 ![Hasil lease klien](assets/no5.2.png)
+
 ![Lease time dari paket DHCP](assets/no5.png)
 
 ---
@@ -327,10 +328,7 @@ ip route
 
 Hasil pengujian: Kugisaki memperoleh `10.89.3.99` melalui DHCP, bukan karena alamat statis yang dikonfigurasi manual.
 
-### Bukti 6.1 — Konfigurasi Reservasi
-![Konfigurasi fixed address Kugisaki](Bukti_Pengujian/Soal_06/01-fixed-address-config.png)
-
-### Bukti 6.2 — IP Kugisaki
+### Bukti 6 — IP Kugisaki
 ![Hasil Fixed Addres Kugisaki](assets/no6.2.png)
 
 ---
