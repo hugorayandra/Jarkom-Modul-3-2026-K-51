@@ -336,7 +336,7 @@ Hasil pengujian: Kugisaki memperoleh `10.89.3.99` melalui DHCP, bukan karena ala
 ![Konfigurasi fixed address Kugisaki](Bukti_Pengujian/Soal_06/01-fixed-address-config.png)
 
 ### Bukti 6.2 — IP Kugisaki
-![Hasil Fixed Addres Kugisaki](assets/no6.png)
+![Hasil Fixed Addres Kugisaki](assets/6.2.png)
 
 ---
 
@@ -384,10 +384,10 @@ Hasil alamat yang tercatat pada pengujian:
 Periksa IP aktual pada terminal Ino dan Miwa, lalu bukti masa lease Miwa selama `43200` detik sebelum menyatakan seluruh aspek validasi selesai.
 
 ### Bukti 7.1 — IP dan Routing Klien
-![IP dan routing klien](Bukti_Pengujian/Soal_07/01-client-network.png)
+![IP dan routing klien](assets/no7.png)
 
 ### Bukti 7.2 — DHCP Lease Tengen
-![DHCP lease Tengen](Bukti_Pengujian/Soal_07/02-dhcp-leases.png)
+![DHCP lease Tengen](assets/no7.2.png)
 
 ### Bukti 7.3 — DNS dan Domain Search
 ![DNS dan domain search](Bukti_Pengujian/Soal_07/03-dns-options.png)
@@ -416,11 +416,8 @@ tcpdump -ni eth0 -vvv 'udp port 67 or udp port 68'
 
 Dalam pengujian Itadori, server yang terlihat adalah `10.89.4.10`, alamat yang ditawarkan `10.89.2.10`, dan lease time `600` detik. `giaddr` harus sesuai dengan interface Jichi yang menerima request klien; untuk Network 2 nilainya diharapkan `10.89.2.1`.
 
-### Bukti 8.1 — Urutan Paket DORA
-![Paket DHCP DORA](Bukti_Pengujian/Soal_08/01-dhcp-dora.png)
-
 ### Bukti 8.2 — Detail Paket DHCP
-![Detail paket DHCP](Bukti_Pengujian/Soal_08/02-dhcp-packet-details.png)
+![Detail paket DHCP](assets/no8.png)
 
 ---
 
@@ -460,14 +457,11 @@ Membuktikan bahwa klien gagal mendapatkan lease baru ketika Relay dihentikan dan
 
 Pada pengujian yang dilakukan, Itadori berhasil memperoleh `10.89.2.10` sebelum gangguan, gagal memperoleh lease ketika relay dihentikan, lalu kembali berhasil setelah relay berjalan lagi.
 
-### Bukti 9.1 — DHCP Relay Dihentikan
-![Relay berhenti](Bukti_Pengujian/Soal_09/01-relay-stopped.png)
-
 ### Bukti 9.2 — Klien Gagal Mendapat Lease
 ![Kegagalan DHCP saat relay mati](Bukti_Pengujian/Soal_09/02-dhcp-failure.png)
 
 ### Bukti 9.3 — DHCP Pulih
-![DHCP berhasil setelah relay dipulihkan](Bukti_Pengujian/Soal_09/03-dhcp-recovered.png)
+![DHCP berhasil setelah relay dipulihkan](assets/no9.png)
 
 ---
 
