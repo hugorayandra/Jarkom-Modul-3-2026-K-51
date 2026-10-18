@@ -72,6 +72,9 @@
 
 **Catatan:** Pastikan tidak ada dua node memakai IP yang sama. Pada Network 1, Utahime adalah `.1.2`, Shoko `.1.3`, dan Gojo `.1.4`. Domain dan nama database menggunakan `K-51` sesuai kelompok; jika prefix resmi berbeda, sesuaikan sebelum menjalankan script.
 
+### Bukti 1.1 — TOPOLOGI
+![Bukti Topologi](assets/topologi.png)
+
 ## Persiapan umum
 
 - Gunakan image Docker yang ditentukan praktikum: `ardhptr21/debinet:latest` untuk server/infrastruktur dan `ardhptr21/alpinet:latest` untuk klien.
@@ -243,6 +246,9 @@ ip route
 
 Hasil pengujian yang tercatat: Itadori `10.89.2.10`, Fushiguro `10.89.2.11`, Zenin `10.89.2.70`, dan Okkotsu `10.89.2.71`.
 
+### Bukti 4 — Hasil Lease Klien
+![Hasil lease Pool 1 dan Pool 2](assets/leaseno4.png)
+
 ---
 
 ## Soal 5 — Short lease dan long lease
@@ -276,6 +282,11 @@ grep -nE 'class |subclass |range |default-lease-time|max-lease-time|domain-searc
 ```
 
 Uji klien dengan meminta lease baru. Untuk membuktikan durasi lease, periksa DHCP Offer/ACK pada packet capture. Hasil yang pernah terlihat pada Kusakabe adalah lease `1800` detik, gateway `10.89.3.1`, DNS `10.89.1.2` dan `10.89.1.3`, serta domain search `K-51.com`.
+
+### Bukti 5 — Hasil Lease Client
+![Hasil lease klien](assets/no5.2.png)
+
+![Lease time dari paket DHCP](assets/no5.png)
 
 ---
 
@@ -316,6 +327,9 @@ ip route
 ```
 
 Hasil pengujian: Kugisaki memperoleh `10.89.3.99` melalui DHCP, bukan karena alamat statis yang dikonfigurasi manual.
+
+### Bukti 6 — IP Kugisaki
+![Hasil Fixed Addres Kugisaki](assets/no6.2.png)
 
 ---
 
@@ -362,6 +376,12 @@ Hasil alamat yang tercatat pada pengujian:
 
 Periksa IP aktual pada terminal Ino dan Miwa, lalu bukti masa lease Miwa selama `43200` detik sebelum menyatakan seluruh aspek validasi selesai.
 
+### Bukti 7.1 — IP dan Routing Klien
+![IP dan routing klien](assets/no7.png)
+
+### Bukti 7.2 — DHCP Lease Tengen
+![DHCP lease Tengen](assets/no7.2.png)
+
 ---
 
 ## Soal 8 — Packet capture DHCP
@@ -385,6 +405,9 @@ tcpdump -ni eth0 -vvv 'udp port 67 or udp port 68'
 ```
 
 Dalam pengujian Itadori, server yang terlihat adalah `10.89.4.10`, alamat yang ditawarkan `10.89.2.10`, dan lease time `600` detik. `giaddr` harus sesuai dengan interface Jichi yang menerima request klien; untuk Network 2 nilainya diharapkan `10.89.2.1`.
+
+### Bukti 8 — Detail Paket DHCP
+![Detail paket DHCP](assets/no8.png)
 
 ---
 
@@ -423,6 +446,12 @@ Membuktikan bahwa klien gagal mendapatkan lease baru ketika Relay dihentikan dan
 6. Ulangi permintaan lease dan pastikan klien kembali memperoleh IP dari pool yang benar serta gateway awalnya.
 
 Pada pengujian yang dilakukan, Itadori berhasil memperoleh `10.89.2.10` sebelum gangguan, gagal memperoleh lease ketika relay dihentikan, lalu kembali berhasil setelah relay berjalan lagi.
+
+### Bukti 9.1 — Klien Gagal Mendapat Lease
+![Kegagalan DHCP saat relay mati](assets/no9.2.png)
+
+### Bukti 9.2 — DHCP Pulih
+![DHCP berhasil setelah relay dipulihkan](assets/no9.png)
 
 ---
 
@@ -526,7 +555,16 @@ dig @10.89.1.3 jujutsu.K-51.com NS +short
 
 Dari klien, lakukan query SOA ke kedua server. Naikkan serial pada file zona Utahime, validasi dengan `named-checkzone`, kemudian jalankan `service named reload`. Query SOA Shoko harus menunjukkan serial baru tanpa restart manual pada Shoko. Layanan menggunakan `named` pada lingkungan Debian yang digunakan.
 
-### Bukti 11.1 — Query dari Klien
+### Bukti 11.1 — Validasi Zona Master
+![Validasi DNS Master](assets/no11.2.png)
+
+### Bukti 11.2 — Query SOA dan NS Master
+![SOA dan NS Utahime](assets/no11.4.png)
+
+### Bukti 11.3 — Zona pada Slave
+![Zona hasil transfer Shoko](assets/no11.png)
+
+### Bukti 11.5 — Query dari Klien
 ![Query DNS dari klien](Bukti_Pengujian/Soal_11/05-client-dig.png)
 
 ---
