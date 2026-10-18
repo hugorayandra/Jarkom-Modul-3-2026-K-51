@@ -781,14 +781,8 @@ Uji akses remote dari node Network 4 lain (contoh: Nanami):
 mysql -h 10.89.4.22 -u shibuya -pshibuyapass -e "SHOW DATABASES;"
 ```
  
-### Bukti 13.1 — Konfigurasi Master
-![MariaDB Master](Bukti_Pengujian/Soal_13/01-master-config.png)
- 
-### Bukti 13.2 — Status Slave
-![MariaDB Slave status](Bukti_Pengujian/Soal_13/02-slave-status.png)
- 
-### Bukti 13.3 — Data Tereplikasi
-![Data pada Master dan Slave](Bukti_Pengujian/Soal_13/03-replication-data.png)
+### Bukti 13.1 — Akses Remote Network 4
+![Akses remote MariaDB dari Network 4](Bukti_Pengujian/Soal_13/04-remote-access.png)
  
 ---
 
@@ -935,10 +929,7 @@ Periksa distribusi catatan di Yaga:
 mysql -u root -e 'SELECT worker, COUNT(*) FROM `db_shibuya_K-51`.request_logs GROUP BY worker;'
 ```
  
-### Bukti 15.1 — Konfigurasi Upstream
-![Konfigurasi load balancer](Bukti_Pengujian/Soal_15/01-upstream-config.png)
- 
-### Bukti 15.2 — Distribusi Request
+### Bukti 15.1 — Distribusi Request
 ![Distribusi request worker API](Bukti_Pengujian/Soal_15/02-load-distribution.png)
  
 ---
@@ -1014,13 +1005,10 @@ rm -rf /var/cache/nginx/frontend/*
 service nginx reload
 ```
  
-### Bukti 16.1 — Konfigurasi Reverse Proxy
-![Konfigurasi reverse proxy Gojo](Bukti_Pengujian/Soal_16/01-proxy-config.png)
- 
-### Bukti 16.2 — Respons Frontend
+### Bukti 16.1 — Respons Frontend
 ![Respons frontend melalui Gojo](Bukti_Pengujian/Soal_16/02-frontend-response.png)
  
-### Bukti 16.3 — Respons API
+### Bukti 16.2 — Respons API
 ![Respons API melalui Geto](Bukti_Pengujian/Soal_16/03-api-response.png)
  
 ---
@@ -1106,7 +1094,7 @@ curl -s -H 'X-Real-IP: 1.2.3.4' http://10.89.4.11/api
 curl -s -H 'X-Real-IP: 1.2.3.4' http://jujutsu.K-51.com/api
 ```
  
-### Bukti 17.1 — Header pada Proxy
+### Bukti 17.1 — IP Klien pada Respons API
 ![Header IP klien](Bukti_Pengujian/Soal_17/01-client-ip-headers.png)
  
 ### Bukti 17.2 — Data client_ip
@@ -1198,13 +1186,7 @@ Setelah sekitar 5 detik (`fail_timeout`), ulangi uji kondisi normal; Nanami dan 
 mysql -u root -e 'SELECT worker, COUNT(*) FROM `db_shibuya_K-51`.request_logs GROUP BY worker;'
 ```
  
-### Bukti 18.1 — Konfigurasi Backup Upstream
-![Konfigurasi API fallback](Bukti_Pengujian/Soal_18/01-fallback-config.png)
- 
-### Bukti 18.2 — Kondisi Worker Utama Berhenti
-![Worker API utama berhenti](Bukti_Pengujian/Soal_18/02-primary-failure.png)
- 
-### Bukti 18.3 — Respons dari Kirara
+### Bukti 18.1 — Respons dari Kirara
 ![API fallback Kirara](Bukti_Pengujian/Soal_18/03-kirara-response.png)
  
 ---
@@ -1433,6 +1415,12 @@ Tuliskan berdasarkan angka yang benar-benar diperoleh. Poin yang perlu dibahas:
  
 ### Bukti 20.3 — Analisis Log
 ![Analisis log Gojo](Bukti_Pengujian/Soal_20/03-access-log-analysis.png)
+
+### Bukti 20.4 — Analisis Log Frontend
+![Analisis log frontend](Bukti_Pengujian/Soal_20/03-access-log-analysis-web.png)
+
+### Bukti 20.5 — Analisis Log API Tanpa Rate Limit
+![Analisis log API tanpa limit](Bukti_Pengujian/Soal_20/03-access-log-analysis-nolimit.png)
 
 ---
 
