@@ -339,7 +339,7 @@ Hasil pengujian: Kugisaki memperoleh `10.89.3.99` melalui DHCP, bukan karena ala
 ![Konfigurasi fixed address Kugisaki](Bukti_Pengujian/Soal_06/01-fixed-address-config.png)
 
 ### Bukti 6.2 — IP Kugisaki
-![Hasil Fixed Addres Kugisaki](assets/no6(2).png)
+![Hasil Fixed Addres Kugisaki](assets/no6 (2).png)
 
 ---
 
